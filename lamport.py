@@ -2,15 +2,16 @@ import hashlib
 from os import urandom
 from binascii import unhexlify, hexlify
 
-
-#define constants such as length of byte, key size...
-
 #return 256 bit hex random key encoded into 64 bytes
 def random_key(n = 32):
     return(hexlify(urandom(n)))
 
 def sha256(message):
     return hashlib.sha256(message).hexdigest()
+
+#message to hex utf-8 encoded
+def sha256_encoded(message):
+    return hashlib.sha256(str(message).encode('utf-8')).hexdigest()
 
 #Generate private and corresponding public keys
 def generate_key(size = 256):
@@ -22,17 +23,11 @@ def generate_key(size = 256):
         public_key.append((sha256(a),sha256(b)))
     return(private_key, public_key)
 
-private_key, public_key = generate_key()
-#print((private_key))
 
-#message to hex utf-8 enc
-def sha256b(message = 'irr'):
-    return hashlib.sha256(str(message).encode('utf-8')).hexdigest()
-
-def sign_key(private_key):
+def sign_key(private_key, message):
     signature = []
-    bin_lmsg = unhexlify(sha256b())
-    print(bin_lmsg)
+    bin_lmsg = unhexlify(sha256_encoded(message))
+    #print(bin_lmsg)
     z = 0
     #have a binary encoded message. Each byte convert to 8 bits and add on necessary zerso
     for i in range (len(bin_lmsg)):
@@ -55,18 +50,15 @@ def sign_key(private_key):
 
     return(signature)
 
-sign = sign_key(private_key)
-#print(sign)
-
 
 
 
 def verify_lkey(signature, public_key ):  #verify lamport signature
 
-    bin_lmsg = unhexlify(sha256b())
+    bin_lmsg = unhexlify(sha256_encoded(message))
     verify = []
     z = 0
-    print(bin_lmsg)
+    #print(bin_lmsg)
     for i in range (len(bin_lmsg)):
         l_byte = bin(bin_lmsg[i])[2:]   #generate a binary string of 8 bits for each byte of 32/256.
 
@@ -94,5 +86,52 @@ def verify_lkey(signature, public_key ):  #verify lamport signature
 
     return True
 
-ans = verify_lkey(sign, public_key)
-print(ans)
+
+def inputs():
+    print("\n")
+    print("Digital Lamport signature: Using 256 blocks containing each containint 256 bits.")
+    print("sha256 is the one way function used to generate public keys.")
+    print("\n")
+
+
+
+if __name__ == "__main__":
+
+    inputs()
+
+    input("Press enter to generate private/public key set... ")
+    private_key, public_key = generate_key()
+
+    print("\n")
+    print("private key first 10 blocks: ")
+    print(private_key[0:9])
+
+    print("\n")
+    print("public key first 10 blocks: ")
+    print(public_key[0:9])
+
+    print("\n")
+    message = input("Enter the message you wish to broadcast: ")
+
+
+    sign = sign_key(private_key, message)
+    print("\n")
+    print("First 10 blocks of Signature on message: ")
+    print(sign[0:9])
+
+
+    ans = verify_lkey(sign, public_key)
+    if ans == True:
+        print("\n")
+        print("Message was signed by the correct private key")
+    else:
+        print("\n")
+        print("Message was signed by a different private key")
+
+    #carol trying to broadcast same message to try pretend to be alice
+
+    #carol_private_key, carol_public_key = generate_key()
+
+    #sign_c = sign_key(carol_private_key, message)
+    #ans = verify_lkey(sign_c, public_key)
+    #print(ans)
